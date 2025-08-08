@@ -1,0 +1,191 @@
+{
+    "scenario": {
+        "name": "Gerador e Envio de Orçamentos",
+        "version": 2,
+        "author": {
+            "name": "Especialista em Automação",
+            "email": "ia@gemini.google.com"
+        },
+        "created": "2025-07-02T16:50:40.000Z",
+        "updated": "2025-07-02T16:50:40.000Z",
+        "log": false,
+        "invalid": false,
+        "sequential": true,
+        "parameters": [],
+        "metadata": {
+            "instant": true,
+            "version": 1,
+            "scenario": {
+                "roundtrips": 1,
+                "maxErrors": 3,
+                "autoCommit": true,
+                "autoCommitTrigger": true,
+                "dataloss": false,
+                "confidential": false
+            },
+            "designer": {
+                "orphans": []
+            }
+        },
+        "flow": [
+            {
+                "from": 1,
+                "to": 2
+            },
+            {
+                "from": 2,
+                "to": 3
+            },
+            {
+                "from": 3,
+                "to": 4
+            }
+        ],
+        "modules": [
+            {
+                "id": 1,
+                "module": "google-forms:watch-responses",
+                "version": 1,
+                "parameters": {
+                    "connection": null,
+                    "formId": "ID_DO_SEU_FORMULARIO_GOOGLE",
+                    "limit": 1
+                },
+                "metadata": {
+                    "designer": {
+                        "x": 0,
+                        "y": 0
+                    },
+                    "restore": {
+                        "parameters": {
+                            "formId": {
+                                "label": "ID_DO_SEU_FORMULARIO_GOOGLE"
+                            }
+                        }
+                    },
+                    "expect": {
+                        "responses": {
+                            "type": "array",
+                            "items": {
+                                "answers": {
+                                    "type": "array",
+                                    "items": [
+                                        {
+                                            "label": "nome_cliente"
+                                        },
+                                        {
+                                            "label": "email_cliente"
+                                        },
+                                        {
+                                            "label": "descricao_servico"
+                                        },
+                                        {
+                                            "label": "valor_total"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                "id": 2,
+                "module": "google-docs:create-document-from-template",
+                "version": 1,
+                "parameters": {
+                    "connection": "{{1.connection}}",
+                    "title": "Orçamento - {{1.responses[].answers[0].textAnswers.answers[0].value}} - {{formatDate(now; \"YYYY-MM-DD\")}}",
+                    "documentId": "ID_DO_SEU_DOCUMENTO_MODELO",
+                    "values": {
+                        "cliente": "{{1.responses[].answers[0].textAnswers.answers[0].value}}",
+                        "servico": "{{1.responses[].answers[2].textAnswers.answers[0].value}}",
+                        "valor": "{{1.responses[].answers[3].textAnswers.answers[0].value}}"
+                    }
+                },
+                "metadata": {
+                    "designer": {
+                        "x": 250,
+                        "y": 0
+                    },
+                    "restore": {
+                        "parameters": {
+                            "documentId": {
+                                "label": "ID_DO_SEU_DOCUMENTO_MODELO"
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                "id": 3,
+                "module": "google-drive:download-a-file",
+                "version": 1,
+                "parameters": {
+                    "connection": "{{1.connection}}",
+                    "fileId": "{{2.documentId}}",
+                    "type": "application/pdf"
+                },
+                "metadata": {
+                    "designer": {
+                        "x": 500,
+                        "y": 0
+                    }
+                }
+            },
+            {
+                "id": 4,
+                "module": "email:send-an-email",
+                "version": 1,
+                "parameters": {
+                    "connection": null,
+                    "to": [
+                        {
+                            "name": "{{1.responses[].answers[0].textAnswers.answers[0].value}}",
+                            "email": "{{1.responses[].answers[1].textAnswers.answers[0].value}}"
+                        }
+                    ],
+                    "subject": "Seu orçamento para {{1.responses[].answers[2].textAnswers.answers[0].value}} está pronto!",
+                    "body": "<p>Olá, {{1.responses[].answers[0].textAnswers.answers[0].value}}!</p><p>Obrigado pelo seu interesse em nossos serviços. Conforme solicitado, segue em anexo o orçamento detalhado para <strong>{{1.responses[].answers[2].textAnswers.answers[0].value}}</strong>.</p><p>Qualquer dúvida, estou à disposição.</p><p>Atenciosamente,</p><p>Seu Nome</p>",
+                    "attachments": [
+                        {
+                            "name": "{{3.name}}",
+                            "data": "{{3.data}}"
+                        }
+                    ]
+                },
+                "metadata": {
+                    "designer": {
+                        "x": 750,
+                        "y": 0
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "instant": true,
+        "version": 1,
+        "scenario": {
+            "roundtrips": 1,
+            "maxErrors": 3,
+            "autoCommit": true,
+            "autoCommitTrigger": true,
+            "dataloss": false,
+            "confidential": false
+        },
+        "designer": {
+            "orphans": []
+        },
+        "connections": {
+            "{{1.connection}}": {
+                "type": "google",
+                "id": null
+            },
+            "{{4.parameters.connection}}": {
+                "type": "smtp",
+                "id": null
+            }
+        }
+    }
+}
